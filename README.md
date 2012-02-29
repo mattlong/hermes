@@ -8,7 +8,22 @@ Supply your own XMPP-based (e.g. GMail/Google Talk) accounts to serve as chatroo
 
 ## Usage
 
-TODO
+    from hermes import start_server
+    
+    pinky = { 'JID': 'p.suavo@wb.com', 'NICK': 'pinky' }
+    
+    brain = { 'JID': 'brain@wb.com', 'NICK': 'brain' }
+    
+    chatrooms = {
+        'world-domination-planning': {
+            'SERVER': ('talk.google.com', 5223,),
+            'JID': 'wdp@foo.com',
+            'PASSWORD': 'thesamethingwedoeverynight',
+            'MEMBERS': [pinky, brain],
+        },
+    }
+    
+    start_server(chatrooms=chatrooms)
 
 ## Installation
 
