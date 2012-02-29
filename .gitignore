@@ -1,3 +1,6 @@
 *.pyc
 .*
+*.egg-info
+dist
+
 test_settings.py
