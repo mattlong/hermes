@@ -31,11 +31,23 @@ Package available from PyPI: <http://pypi.python.org/pypi/hermes-chat/>. Install
 
     pip install hermes-chat
 
+## Commands
+
+Hermes will interpret certain messages as commands and treats them differently from normal messagesd:
+
+* `/marco` - Not sure if other people are getting your messages? Hermes replies to you (and only you) with "polo".
+
+* `/mute` - **_Coming soon._** Queues up incoming messages so you're distraction free (at lease from your chatrooms). Others are informed that you're busy.
+
+* `/unmute` - **_Coming soon._** Receive all queued messages. Others are informed that you're not busy anymore.
+
+* `/invite <handle>` - **_Coming soon._** Invite new members to the chatroom.
+
 ## Upcoming Features
 
-* Persistence: allow chatroom details to be persisted besides hardcoded settings module. Hooks to update settings on the fly.
-* Mute/unmute: queue up messages and send them all once unmuted.
-* Invitations: manage chatroom membership. Depends on persistence support
+* **Persistence**: Allow chatroom details to be easily persisted in ways besides hardcoded python objects. Provide hooks to update settings on the fly.
+* **Mute/unmute**: Don't want to be distracted? Have your messages queued up and waiting for you when you want them.
+* **Invitations**: Manage chatroom membership. Depends on persistence support
 
 ## Is it any good?
 
