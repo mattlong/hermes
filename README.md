@@ -31,6 +31,12 @@ Package available from PyPI: <http://pypi.python.org/pypi/hermes-chat/>. Install
 
     pip install hermes-chat
 
+## Upcoming Features
+
+* Persistence: allow chatroom details to be persisted besides hardcoded settings module. Hooks to update settings on the fly.
+* Mute/unmute: queue up messages and send them all once unmuted.
+* Invitations: manage chatroom membership. Depends on persistence support
+
 ## Is it any good?
 
 Yes.
