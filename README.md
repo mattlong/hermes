@@ -12,7 +12,7 @@ Supply your own XMPP-based (e.g. GMail/Google Talk) accounts to serve as chatroo
     
     pinky = { 'JID': 'p.suavo@wb.com', 'NICK': 'pinky' }
     
-    brain = { 'JID': 'brain@wb.com', 'NICK': 'brain' }
+    brain = { 'JID': 'brain@wb.com', 'NICK': 'brain', 'ADMIN': True }
     
     chatrooms = {
         'world-domination-planning': {
@@ -37,17 +37,17 @@ Hermes will interpret certain messages as commands and treats them differently f
 
 * `/marco` - Not sure if other people are getting your messages? Hermes replies to you (and only you) with "polo".
 
-* `/mute` - **_Coming soon._** Queues up incoming messages so you're distraction free (at lease from your chatrooms). Others are informed that you're busy.
+* `/mute` - Queues up incoming messages so you're distraction free. Others are informed that you're busy.
 
-* `/unmute` - **_Coming soon._** Receive all queued messages. Others are informed that you're not busy anymore.
+* `/unmute` - Receive all queued messages. Others are informed that you're not busy anymore.
 
-* `/invite <handle>` - **_Coming soon._** Invite new members to the chatroom.
+* `/invite <handle>` - Invite new members to the chatroom.
+
+* `/kick <handle>` - Invite new members to the chatroom.
 
 ## Upcoming Features
 
 * **Persistence**: Allow chatroom details to be easily persisted in ways besides hardcoded python objects. Provide hooks to update settings on the fly.
-* **Mute/unmute**: Don't want to be distracted? Have your messages queued up and waiting for you when you want them.
-* **Invitations**: Manage chatroom membership. Depends on persistence support
 
 ## Is it any good?
 

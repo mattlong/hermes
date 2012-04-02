@@ -1,5 +1,5 @@
 from hermes import start_server
 
-from test_settings import chatrooms
+import test_settings
 
-start_server(chatrooms=chatrooms)
+start_server(test_settings)
