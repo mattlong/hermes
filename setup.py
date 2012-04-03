@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="hermes-chat",
     packages=find_packages(),
-    version="0.2.0",
+    version="0.2.1",
     author="Matt Long",
     license="BSD",
     author_email="matt@mattlong.org",
