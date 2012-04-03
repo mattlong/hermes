@@ -3,8 +3,9 @@ from datetime import datetime
 
 #from hermes import database
 
-def debug(msg, indent=0):
-    print '%s%s%s' % (datetime.utcnow(), (indent+1)*' ', msg)
+def debug(msg, indent=0, quiet=False):
+    if not quiet:
+        print '%s%s%s' % (datetime.utcnow(), (indent+1)*' ', msg)
 
 class HermesBot(object):
     def __init__(self, name, params):
@@ -32,7 +33,7 @@ class HermesBot(object):
         #    print roster.getSubscription(jid)
 
     def invite_user(self, jid, inviter=None):
-        for member in filter(lambda m: m['JID'] == jid, self.params['MEMBERS']):
+        if len(filter(lambda m: m['JID'] == jid, self.params['MEMBERS'])) > 0:
             if inviter:
                 self.send_message('%s is already a member' % (jid,), inviter)
         else:
@@ -53,11 +54,11 @@ class HermesBot(object):
             self.client.sendPresence(jid=member['JID'], typ='unsubscribe')
             self.broadcast('kicking %s from the room' % (jid,))
 
-    def send_message(self, body, to):
+    def send_message(self, body, to, quiet=False):
         if to.get('MUTED'):
             to['QUEUED_MESSAGES'].append(body)
         else:
-            debug('message on %s to %s: %s' % (self.name, to['JID'], body))
+            debug('message on %s to %s: %s' % (self.name, to['JID'], body), quiet=quiet)
             message = xmpp.protocol.Message(to=to['JID'], body=body, typ='chat')
             self.client.send(message)
 
@@ -68,7 +69,7 @@ class HermesBot(object):
                 m.get('RECEIVE', True) and
                 m not in exclude, self.params['MEMBERS']):
             debug(member['JID'], indent=2)
-            self.send_message(body, member)
+            self.send_message(body, member, quiet=True)
 
     def do_marco(self, sender, body, args):
         self.send_message('polo', sender)
@@ -120,7 +121,7 @@ class HermesBot(object):
         else:
             cmd, args = None, None
 
-        function = getattr(self, 'do_'+cmd) if cmd else None
+        function = getattr(self, 'do_'+cmd, None) if cmd else None
         try:
             if function:
                 function(sender, body, args)
