@@ -116,7 +116,7 @@ class HermesBot(object):
 
         words = body.split(' ')
         cmd, args = words[0], words[1:]
-        if cmd[0] == '/':
+        if cmd and cmd[0] == '/':
             cmd = cmd[1:]
         else:
             cmd, args = None, None
