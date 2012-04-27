@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PACKAGE_NAME=hermes-chat
+PACKAGE_NAME=hermes
 rm -rf dist $PACKAGE_NAME.egg-info
 python setup.py sdist upload
 pip uninstall $PACKAGE_NAME

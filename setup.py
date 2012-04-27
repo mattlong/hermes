@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="hermes-chat",
+    name="hermes",
     packages=find_packages(),
     version="0.2.2",
     author="Matt Long",

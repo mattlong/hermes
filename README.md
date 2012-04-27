@@ -27,9 +27,9 @@ Supply your own XMPP-based (e.g. GMail/Google Talk) accounts to serve as chatroo
 
 ## Installation
 
-Package available from PyPI: <http://pypi.python.org/pypi/hermes-chat/>. Install with:
+Package available from PyPI: <http://pypi.python.org/pypi/hermes/>. Install with:
 
-    pip install hermes-chat
+    pip install hermes
 
 ## Commands
 

@@ -2,5 +2,6 @@
 .*
 *.egg-info
 dist
+build
 
 test_settings.py
