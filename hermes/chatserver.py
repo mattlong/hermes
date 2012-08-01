@@ -1,4 +1,4 @@
-import sys, logging, json, xmpp, select, socket
+import sys, logging, json, xmpp, select, socket, re
 from datetime import datetime
 
 import hermes
@@ -8,7 +8,13 @@ def debug(msg, indent=0, quiet=False):
         print '%s%s%s' % (datetime.utcnow(), (indent+1)*' ', msg)
 
 class HermesBot(object):
+    command_patterns = []
+
     def __init__(self, name, params):
+        self.command_patterns = []
+        for pattern in type(self).command_patterns:
+            self.command_patterns.append((re.compile(pattern[0]), pattern[1]))
+
         self.name = name
         self.params = params
 
@@ -60,22 +66,29 @@ class HermesBot(object):
             self.client.sendPresence(jid=member['JID'], typ='unsubscribe')
             self.broadcast('kicking %s from the room' % (jid,))
 
-    def send_message(self, body, to, quiet=False):
+    def send_message(self, body, to, quiet=False, html_body=None):
         if to.get('MUTED'):
             to['QUEUED_MESSAGES'].append(body)
         else:
             debug('message on %s to %s: %s' % (self.name, to['JID'], body), quiet=quiet)
+
             message = xmpp.protocol.Message(to=to['JID'], body=body, typ='chat')
+
+            if html_body:
+                html = xmpp.Node('html', {'xmlns': 'http://jabber.org/protocol/xhtml-im'})
+                html.addChild(node=xmpp.simplexml.XML2Node("<body xmlns='http://www.w3.org/1999/xhtml'>" + html_body.encode('utf-8') + "</body>"))
+                message.addChild(node=html)
+
             self.client.send(message)
 
-    def broadcast(self, body, exclude=()):
+    def broadcast(self, body, html_body=None, exclude=()):
         debug('broadcast on %s: %s' % (self.name, body,))
         for member in filter(lambda m:
                 not m.get('KICKED') and
                 m.get('RECEIVE', True) and
                 m not in exclude, self.params['MEMBERS']):
             debug(member['JID'], indent=2)
-            self.send_message(body, member, quiet=True)
+            self.send_message(body, member, html_body=html_body, quiet=True)
 
     def do_marco(self, sender, body, args):
         self.send_message('polo', sender)
@@ -128,6 +141,15 @@ class HermesBot(object):
         if not should_process: return
         sender = sender[0]
 
+        for p in self.command_patterns:
+            reg, cmd = p
+            m = reg.match(body)
+            if m:
+                debug('pattern matched for bot command \'%s\'' % (cmd,))
+                function = getattr(self, cmd, None) if cmd else None
+                if function:
+                    return function(sender, body, m)
+
         words = body.split(' ')
         cmd, args = words[0], words[1:]
         if cmd and cmd[0] == '/':
@@ -138,10 +160,10 @@ class HermesBot(object):
         function = getattr(self, 'do_'+cmd, None) if cmd else None
         try:
             if function:
-                function(sender, body, args)
+                return function(sender, body, args)
             else: #normal broadcast
                 broadcast_body = '[%s] %s' % (sender['NICK'], body,)
-                self.broadcast(broadcast_body, exclude=(sender,))
+                return self.broadcast(broadcast_body, exclude=(sender,))
         except:
             exc_info = sys.exc_info()
             traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
@@ -151,7 +173,14 @@ def start_server(settings):
 
     bots = []
     for name, params in settings.CHATROOMS.items():
-        bot = HermesBot(name, params)
+
+        bot_class_str = params.get('CLASS', 'hermes.HermesBot')
+        bot_class_path = bot_class_str.split('.')
+        module, classname = '.'.join(bot_class_path[:-1]), bot_class_path[-1]
+        #bot_class = __import__(bot_class_str)
+        _ = __import__(module, globals(), locals(), [classname])
+        bot_class = getattr(_, classname)
+        bot = bot_class(name, params)
         bots.append(bot)
 
     while True:
