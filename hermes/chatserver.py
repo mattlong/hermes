@@ -1,7 +1,7 @@
-import sys, logging, json, xmpp, select
+import sys, logging, json, xmpp, select, socket
 from datetime import datetime
 
-#from hermes import database
+import hermes
 
 def debug(msg, indent=0, quiet=False):
     if not quiet:
@@ -24,6 +24,7 @@ class HermesBot(object):
         if not auth:
             raise Exception("ERROR: could not authenticate")
 
+        self.client.RegisterDisconnectHandler(self.on_disconnect)
         self.client.RegisterHandler('message', self.on_message)
         self.client.sendInitPresence(requestRoster=1)
 
@@ -39,7 +40,12 @@ class HermesBot(object):
         else:
             self.broadcast('inviting %s to the room' % (jid,))
             self.client.sendPresence(jid=jid, typ='subscribed')
-            self.client.sendPresence(jid=jid, typ='subscribe')
+
+            subscribe_presence = xmpp.dispatcher.Presence(to=jid, typ='subscribe')
+            if 'NICK' in self.params:
+                #http://xmpp.org/extensions/xep-0172.html
+                subscribe_presence.addChild(name='nick', namespace=xmpp.protocol.NS_NICK, payload=self.params['NICK'])
+            self.client.send(subscribe_presence)
 
             new_member = { 'JID': jid, 'NICK': jid.split('@')[0] }
             self.params['MEMBERS'].append(new_member)
@@ -101,11 +107,19 @@ class HermesBot(object):
         else:
             self.send_message('you were not muted', sender)
 
+    def on_disconnect(self):
+        debug('ERROR: Disconnected from server!')
+        #debug(str(self.client.reconnectAndReauth()))
+
     def on_message(self, con, event):
         msg_type = event.getType()
         nick = event.getFrom().getResource()
         from_jid = event.getFrom().getStripped()
         body = event.getBody()
+
+        if msg_type == 'chat' and body is None:
+            return
+
         debug('msg_type[%s] from[%s] nick[%s] body[%s]' % (msg_type, from_jid, nick, body,))
 
         sender = filter(lambda m: m['JID'] == from_jid, self.params['MEMBERS'])
@@ -133,30 +147,42 @@ class HermesBot(object):
             traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
 
 def start_server(settings):
-    socket_list = {}
+    print 'Hermes version %s' % (hermes.VERSION_STRING,)
 
-    #db = database.get_instance(settings.DATABASE)
-    #db.setup()
-
+    bots = []
     for name, params in settings.CHATROOMS.items():
-        #name, params = db.save_room(name, params)
         bot = HermesBot(name, params)
-        bot.connect()
-        socket_list[bot.client.Connection._sock] = bot
-
-    if len(socket_list.keys()) == 0:
-        debug('No chatrooms defined. Exiting.')
-        return
-
-    #socket_list[sys.stdin] = 'stdio'
+        bots.append(bot)
 
     while True:
-        (i , o, e) = select.select(socket_list.keys(),[],[],1)
+        sockets = _get_sockets(bots)
+
+        if len(sockets.keys()) == 0:
+            debug('No chatrooms defined. Exiting.')
+            return
+
+        try:
+            _listen(sockets)
+        except socket.error, ex:
+            if ex.errno == 9:
+                print "Broken socket detected, regathering socket info..."
+
+def _get_sockets(bots):
+    sockets = {}
+    #sockets[sys.stdin] = 'stdio'
+    for bot in bots:
+        bot.connect()
+        sockets[bot.client.Connection._sock] = bot
+    return sockets
+
+def _listen(sockets):
+    while True:
+        (i , o, e) = select.select(sockets.keys(),[],[],1)
         for socket in i:
-            if isinstance(socket_list[socket], HermesBot):
-                socket_list[socket].client.Process(1)
-            elif socket_list[socket] == 'stdio':
+            if isinstance(sockets[socket], HermesBot):
+                sockets[socket].client.Process(1)
+            elif sockets[socket] == 'stdio':
                 msg = sys.stdin.readline().rstrip('\r\n')
                 debug('stdin: %s' % (msg,))
             else:
-                raise Exception("Unknown socket type: %s" % repr(socket_list[socket]))
+                raise Exception("Unknown socket type: %s" % repr(sockets[socket]))
