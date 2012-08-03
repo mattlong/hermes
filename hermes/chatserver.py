@@ -1,4 +1,4 @@
-import sys, logging, json, xmpp, select, socket, re
+import sys, logging, json, xmpp, select, socket, re, time
 from datetime import datetime
 
 import hermes
@@ -19,18 +19,18 @@ class HermesBot(object):
         self.params = params
 
         self.jid = xmpp.protocol.JID(self.params['JID'])
-        self.client = xmpp.Client(self.jid.getDomain(), debug=[])
 
     def connect(self):
+        self.client = xmpp.Client(self.jid.getDomain(), debug=[])
         conn = self.client.connect(server=self.params['SERVER'])
         if not conn:
-            raise Exception("ERROR: could not connect to jabber")
+            raise Exception("could not connect to server")
 
         auth = self.client.auth(self.jid.getNode(), self.params['PASSWORD'])
         if not auth:
-            raise Exception("ERROR: could not authenticate")
+            raise Exception("could not authenticate as chat server")
 
-        self.client.RegisterDisconnectHandler(self.on_disconnect)
+        #self.client.RegisterDisconnectHandler(self.on_disconnect)
         self.client.RegisterHandler('message', self.on_message)
         self.client.sendInitPresence(requestRoster=1)
 
@@ -169,7 +169,7 @@ class HermesBot(object):
             traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
 
 def start_server(settings):
-    print 'Hermes version %s' % (hermes.VERSION_STRING,)
+    debug('Hermes version %s' % (hermes.VERSION_STRING,))
 
     bots = []
     for name, params in settings.CHATROOMS.items():
@@ -184,17 +184,22 @@ def start_server(settings):
         bots.append(bot)
 
     while True:
-        sockets = _get_sockets(bots)
-
-        if len(sockets.keys()) == 0:
-            debug('No chatrooms defined. Exiting.')
-            return
-
         try:
+            debug("INFO: connecting to servers")
+            sockets = _get_sockets(bots)
+            if len(sockets.keys()) == 0:
+                debug('INFO: No chatrooms defined. Exiting.')
+                return
+
             _listen(sockets)
         except socket.error, ex:
             if ex.errno == 9:
-                print "Broken socket detected, regathering socket info..."
+                debug('ERROR: broken socket detected')
+            else:
+                debug('ERROR: unknown socket error %d' % (ex.errno,))
+        except Exception, ex:
+            debug('ERROR: %s' % (ex.message,))
+            time.sleep(1)
 
 def _get_sockets(bots):
     sockets = {}
@@ -209,7 +214,9 @@ def _listen(sockets):
         (i , o, e) = select.select(sockets.keys(),[],[],1)
         for socket in i:
             if isinstance(sockets[socket], HermesBot):
-                sockets[socket].client.Process(1)
+                data_len = sockets[socket].client.Process(1)
+                if data_len is None or data_len == 0:
+                    raise Exception('Disconnected from server')
             elif sockets[socket] == 'stdio':
                 msg = sys.stdin.readline().rstrip('\r\n')
                 debug('stdin: %s' % (msg,))
