@@ -22,7 +22,7 @@ setup(
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: Unix',
         'Operating System :: POSIX',
-        'Development Status :: 4 - Beta'
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
         'Topic :: Software Development :: Libraries :: Python Modules',
