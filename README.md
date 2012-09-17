@@ -8,7 +8,7 @@ Supply your own XMPP-based accounts (Google accounts work great!) to serve as ch
 
 ## Usage
 
-The "Hello World" usage of Hermes looks like this. Put the following in `chatserver.py` and run it:
+The "Hello World" usage of Hermes looks like this. Put the following in `chatserver.py`, update the user info and chatroom connection info, and run it:
 
     from hermes import run_server
     
