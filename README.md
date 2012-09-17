@@ -36,11 +36,11 @@ Available from PyPI: <http://pypi.python.org/pypi/hermes/>. pip is the recommend
 
 Hermes interprets some messages as commands:
 
-* `/mute` - Mutes the chatroom so you can be distraction free. All messages are queued up for you for whenever you unmute the chatroom.
+* `/mute` - Mute the chatroom. Messages are queued up for whenever you unmute the chatroom.
 
-* `/unmute` - Unmutes the chatroom. Receive all messages that had been queued up for you while the chatroom was muted.
+* `/unmute` - Unmute the chatroom. Receive all messages that were queued while the chatroom was muted.
 
-* `/invite <handle>` - Invite new members to the chatroom. Available to admins only.
+* `/invite <handle>` - Invite members to the chatroom. Available to admins only.
 
 * `/kick <handle>` - Kick members from the chatroom. Available to admins only.
 
@@ -48,20 +48,26 @@ Hermes interprets some messages as commands:
 
 ## Extensibility
 
-You can extend the base chatroom class `hermes.Chatroom` to modify or add extra functionality. Then specify your creation as the `CLASS` of your chatrooms:
+You can extend the base chatroom class `hermes.Chatroom` to modify or add extra functionality.
 
-	from hermes import run_server, Chatroom
+Adding a `command_patterns` static property to your class should be particularly useful for extensions.
+It's a list of regular expression/method name pairs. Each incoming message is tested against the regexes until a match is found.
+On a match, the named instance method is invoked to handle the message instead of the default message-handling pipeline.
 
-	class BillyMaysChatroom(Chatroom):
+Specify your creation as the `CLASS` of your chatroom:
+
+    from hermes import run_server, Chatroom
+
+    class BillyMaysChatroom(Chatroom):
     	command_patterns = ((r'.*', 'shout'),)
 
     	def shout(self, sender, body, match):
-        	body = body.upper() #SHOUT IT
-        	self.broadcast(body)
+            body = body.upper() #SHOUT IT
+            self.broadcast(body)
 
-	chatrooms = {
+    chatrooms = {
         'world-domination-planning': {
-        	'CLASS': 'BillyMaysChatroom',
+            'CLASS': 'BillyMaysChatroom',
             'JID': 'world.domination.planning@wb.com',
             'PASSWORD': 'thesamethingwedoeverynight',
             'SERVER': ('talk.google.com', 5223,),
