@@ -1,25 +1,31 @@
 from setuptools import setup, find_packages
 
+from hermes.version import VERSION_STRING
+
 setup(
     name="hermes",
     packages=find_packages(),
-    version="0.2.2",
+    version=VERSION_STRING,
     author="Matt Long",
     license="BSD",
     author_email="matt@mattlong.org",
     url="https://github.com/mattlong/hermes",
-    description="A simple python-based group chat server built on XMPP.",
-    long_description="A simple python-based group chat server built on XMPP. Hermes lets you easily manage chatrooms for friends or colleagues.",
+    description="Hermes is an extensible XMPP-based chatroom server written in Python.",
+    #long_description="",
     install_requires=['xmpppy>=0.5.0rc1'],
     zip_safe=False,
     include_package_data=True,
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Operating System :: MacOS :: MacOS X',
         'Operating System :: Unix',
-        'Development Status :: 3 - Alpha',
+        'Operating System :: POSIX',
+        'Development Status :: 4 - Beta'
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
         'Topic :: Software Development :: Libraries :: Python Modules',
+        'License :: OSI Approved :: ISC License (ISCL)',
     ],
 )

@@ -1,54 +1,90 @@
 # hermes
 
-A simple python-based group chat server built on XMPP. Hermes lets you easily manage chatrooms for friends or colleagues.
+Hermes is an extensible XMPP-based chatroom server written in Python. Easily setup and manage chatrooms for friends or colleagues.
 
 ## How it Works
 
-Supply your own XMPP-based (e.g. GMail/Google Talk) accounts to serve as chatroom hosts, add a lil' bit of configuration, and start it. Chatroom members simply chat with the host account. Hermes broadcasts the message to all other members on its behalf.
+Supply your own XMPP-based accounts (Google accounts work great!) to serve as chatroom hosts, add a bit of configuration, and that's it. All chatroom members are invited to chat with the host account which will in turn broadcast the message to all other members of the room.
 
 ## Usage
 
-    from hermes import start_server
-    
-    pinky = { 'JID': 'p.suavo@wb.com', 'NICK': 'pinky' }
+The "Hello World" usage of Hermes looks like this. Put the following in `chatserver.py` and run it:
+
+    from hermes import run_server
     
     brain = { 'JID': 'brain@wb.com', 'NICK': 'brain', 'ADMIN': True }
+    pinky = { 'JID': 'pinky.suavo@wb.com', 'NICK': 'pinky' }
     
     chatrooms = {
         'world-domination-planning': {
-            'SERVER': ('talk.google.com', 5223,),
-            'JID': 'wdp@foo.com',
+            'JID': 'world.domination.planning@wb.com',
             'PASSWORD': 'thesamethingwedoeverynight',
+            'SERVER': ('talk.google.com', 5223,),
             'MEMBERS': [pinky, brain],
         },
     }
     
-    start_server(chatrooms=chatrooms)
+    run_server(chatrooms)
 
 ## Installation
 
-Package available from PyPI: <http://pypi.python.org/pypi/hermes/>. Install with:
+Available from PyPI: <http://pypi.python.org/pypi/hermes/>. pip is the recommended installation method:
 
     pip install hermes
 
 ## Commands
 
-Hermes will interpret certain messages as commands and treats them differently from normal messagesd:
+Hermes interprets some messages as commands:
 
-* `/marco` - Not sure if other people are getting your messages? Hermes replies to you (and only you) with "polo".
+* `/mute` - Silences (and queues up) all chatroom activity until you unmute it so you can be distraction free.
 
-* `/mute` - Queues up incoming messages so you're distraction free. Others are informed that you're busy.
+* `/unmute` - Receive aqueued messages.
 
-* `/unmute` - Receive all queued messages. Others are informed that you're not busy anymore.
+* `/invite <handle>` - Invite new members to the chatroom. admins only
 
-* `/invite <handle>` - Invite new members to the chatroom.
+* `/kick <handle>` - Invite new members to the chatroom. admins only.
 
-* `/kick <handle>` - Invite new members to the chatroom.
+* `/marco` - Not sure if you're still connected to the chatroom? Chatroom replies to you (and only you) with "polo"
+
+## Extensibility
+
+It's easy to extend the functionality chatroom. Extend the base chatroom class `hermes.HermesChatroom` to modify or add extra functionality. Then specify it as the `CLASS` class your chatrooms:
+
+	from hermes import run_server, Chatroom
+
+	class BillyMaysChatroom(Chatroom):
+    	command_patterns = ((r'.*', 'shout'),)
+
+    	def shout(self, sender, body, match):
+        	body = body.upper() #SHOUT IT
+        	self.broadcast(body)
+
+	chatrooms = {
+        'world-domination-planning': {
+        	'CLASS': 'BillyMaysChatroom',
+            'JID': 'world.domination.planning@wb.com',
+            'PASSWORD': 'thesamethingwedoeverynight',
+            'SERVER': ('talk.google.com', 5223,),
+            'MEMBERS': [pinky, brain],
+        },
+    }
+	
+	run_server(chatrooms, use_default_logging=True)
 
 ## Upcoming Features
 
-* **Persistence**: Allow chatroom details to be easily persisted in ways besides hardcoded python objects. Provide hooks to update settings on the fly.
+* **Persistence**: Allow chatroom configuration/state/history to be persisted
 
 ## Is it any good?
 
 Yes.
+
+Elaborate, you say? Hermes has been successfully used "in production" to run several chatrooms for the Crocodoc team since the first commit. It's good to have guinea pigs.
+
+## License
+
+Hermes is an ISC licensed library. See LICENSE for more details.
+
+## Can I Contribute?
+
+Yes, please do! Pull requests are great!

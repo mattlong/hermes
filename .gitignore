@@ -4,4 +4,4 @@
 dist
 build
 
-test_settings.py
+tests/settings.py
