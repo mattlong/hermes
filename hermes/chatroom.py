@@ -1,8 +1,19 @@
-import sys, logging, re
+"""
+hermes.chatroom
+~~~~~~~~~~~~~~~
+
+This module contains the base chatroom functionality for Hermes.
+"""
+
+import sys
+import re
 import xmpp
+import logging
 
 logger = logging.getLogger(__name__)
+
 class Chatroom(object):
+    """Base chatroom class. Implements default broadcast logic and handles basic chatroom commands."""
 
     #static property that can hold a list of regular expression/method name pairs. Each incoming message
     #is tested against each regex. On a match, the associated method is invoked to handle the message
@@ -19,6 +30,7 @@ class Chatroom(object):
         self.jid = xmpp.protocol.JID(self.params['JID'])
 
     def connect(self):
+        """Connect to the chatroom's server, sets up handlers, invites members as needed."""
         self.client = xmpp.Client(self.jid.getDomain(), debug=[])
         conn = self.client.connect(server=self.params['SERVER'])
         if not conn:
@@ -38,6 +50,7 @@ class Chatroom(object):
             self.invite_user(m, roster=roster)
 
     def get_member(self, jid, default=None):
+        """Get a chatroom member by JID"""
         member = filter(lambda m: m['JID'] == jid, self.params['MEMBERS'])
         if len(member) == 1:
             return member[0]
@@ -47,6 +60,7 @@ class Chatroom(object):
             raise Exception('Multple members have the same JID of [%s]' % (jid,))
 
     def is_member(self, m):
+        """Check if a user is a member of the chatroom"""
         if isinstance(m, basestring):
             jid = m
         else:
@@ -55,6 +69,7 @@ class Chatroom(object):
         return len(filter(lambda m: m['JID'] == jid and m['STATUS'] in ('ACTIVE', 'INVITED'), self.params['MEMBERS'])) > 0
 
     def invite_user(self, new_member, inviter=None, roster=None):
+        """Invites a new member to the chatroom"""
         roster = roster or self.client.getRoster()
         jid = new_member['JID']
 
@@ -77,6 +92,7 @@ class Chatroom(object):
             self.params['MEMBERS'].append(new_member)
 
     def kick_user(self, jid):
+        """Kicks a member from the chatroom. Kicked user will receive no more messages."""
         for member in filter(lambda m: m['JID'] == jid, self.params['MEMBERS']):
             member['STATUS'] = 'KICKED'
             self.send_message('You have been kicked from %s' % (self.name,), member)
@@ -86,6 +102,7 @@ class Chatroom(object):
             self.broadcast('kicking %s from the room' % (jid,))
 
     def send_message(self, body, to, quiet=False, html_body=None):
+        """Send a message to a single member"""
         if to.get('MUTED'):
             to['QUEUED_MESSAGES'].append(body)
         else:
@@ -101,6 +118,7 @@ class Chatroom(object):
             self.client.send(message)
 
     def broadcast(self, body, html_body=None, exclude=()):
+        """Broadcast a message to users in the chatroom"""
         logger.info('broadcast on %s: %s' % (self.name, body,))
         for member in filter(lambda m: m['STATUS'] == 'ACTIVE' and m not in exclude, self.params['MEMBERS']):
             logger.debug(member['JID'])
@@ -109,19 +127,23 @@ class Chatroom(object):
     ### Command handlers ###
 
     def do_marco(self, sender, body, args):
+        """Respond with 'polo' to the user"""
         self.send_message('polo', sender)
 
     def do_invite(self, sender, body, args):
+        """Invite members to the chatroom on a user's behalf"""
         for invitee in args:
             new_member = { 'JID': invitee }
             self.invite_user(new_member, inviter=sender)
 
     def do_kick(self, sender, body, args):
+        """Kick a member from the chatroom. Must be Admin to kick users"""
         if sender.get('ADMIN') != True: return
         for user in args:
             self.kick_user(user)
 
     def do_mute(self, sender, body, args):
+        """Temporarily mutes chatroom for a user"""
         if sender.get('MUTED'):
             self.send_message('you are already muted', sender)
         else:
@@ -130,6 +152,7 @@ class Chatroom(object):
             sender['MUTED'] = True
 
     def do_unmute(self, sender, body, args):
+        """Unmutes the chatroom for a user"""
         if sender.get('MUTED'):
             sender['MUTED'] = False
             self.broadcast('%s has unmuted this chatroom' % (sender['NICK'],))
@@ -142,9 +165,11 @@ class Chatroom(object):
     ### XMPP event handlers ###
 
     def on_disconnect(self):
+        """Handler for disconnection events"""
         logger.error('Disconnected from server!')
 
     def on_presence(self, session, presence):
+        """Handles presence stanzas"""
         if presence.getType() == 'subscribe':
             from_jid = presence.getFrom()
             if self.is_member(from_jid.getStripped()):
@@ -160,6 +185,7 @@ class Chatroom(object):
             logger.info('Unhandled presence stanza of type [%s] from [%s]' % (presence.getType(), presence.getFrom()))
 
     def on_message(self, con, event):
+        """Handles messge stanzas"""
         msg_type = event.getType()
         nick = event.getFrom().getResource()
         from_jid = event.getFrom().getStripped()

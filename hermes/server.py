@@ -1,4 +1,16 @@
-import sys, logging, xmpp, select, socket, time
+"""
+hermes.server
+~~~~~~~~~~~~~
+
+This module contains the chatroom server setup and management for Hermes.
+"""
+
+import sys
+import select
+import socket
+import time
+import logging
+
 from datetime import datetime
 
 from .log import configure_logging
@@ -10,7 +22,12 @@ logger = logging.getLogger(__name__)
 #    if not quiet:
 #        print '%s%s%s' % (datetime.utcnow(), (indent+1)*' ', msg)
 
-def start_server(chatrooms={}, use_default_logging=True):
+def start_server(chatrooms, use_default_logging=True):
+    """Sets up and serves specified chatrooms. Main entrypoint to Hermes.
+
+    :param chatrooms: Dictionary of chatrooms to serve.
+    :param use_default_logging: (optional) Boolean. Set to True if Hermes should setup its default logging configuration.
+    """
     if use_default_logging:
         configure_logging()
 
@@ -47,6 +64,7 @@ def start_server(chatrooms={}, use_default_logging=True):
             time.sleep(1)
 
 def _get_sockets(bots):
+    """Connects and gathers sockets for all chatrooms"""
     sockets = {}
     #sockets[sys.stdin] = 'stdio'
     for bot in bots:
@@ -55,6 +73,7 @@ def _get_sockets(bots):
     return sockets
 
 def _listen(sockets):
+    """Main server loop. Listens for incoming events and dispatches them to appropriate chatroom"""
     while True:
         (i , o, e) = select.select(sockets.keys(),[],[],1)
         for socket in i:
