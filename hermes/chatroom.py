@@ -1,16 +1,8 @@
-import sys, logging, json, xmpp, select, socket, re, time, traceback
-from datetime import datetime
-
-import hermes
-from hermes.log import configure_logging
+import sys, logging, re
+import xmpp
 
 logger = logging.getLogger(__name__)
-
-#def debug(msg, indent=0, quiet=False):
-#    if not quiet:
-#        print '%s%s%s' % (datetime.utcnow(), (indent+1)*' ', msg)
-
-class HermesChatroom(object):
+class Chatroom(object):
 
     #static property that can hold a list of regular expression/method name pairs. Each incoming message
     #is tested against each regex. On a match, the associated method is invoked to handle the message
@@ -184,87 +176,25 @@ class HermesChatroom(object):
         if not should_process: return
         sender = sender[0]
 
-        for p in self.command_patterns:
-            reg, cmd = p
-            m = reg.match(body)
-            if m:
-                logger.info('pattern matched for bot command \'%s\'' % (cmd,))
-                function = getattr(self, cmd, None) if cmd else None
-                if function:
-                    return function(sender, body, m)
-
-        words = body.split(' ')
-        cmd, args = words[0], words[1:]
-        if cmd and cmd[0] == '/':
-            cmd = cmd[1:]
-        else:
-            cmd, args = None, None
-
-        function = getattr(self, 'do_'+cmd, None) if cmd else None
         try:
-            if function:
-                return function(sender, body, args)
-            else: #normal broadcast
-                broadcast_body = '[%s] %s' % (sender['NICK'], body,)
-                return self.broadcast(broadcast_body, exclude=(sender,))
+            for p in self.command_patterns:
+                reg, cmd = p
+                m = reg.match(body)
+                if m:
+                    logger.info('pattern matched for bot command \'%s\'' % (cmd,))
+                    function = getattr(self, str(cmd), None)
+                    if function:
+                        return function(sender, body, m)
+
+            words = body.split(' ')
+            cmd, args = words[0], words[1:]
+            if cmd and cmd[0] == '/':
+                cmd = cmd[1:]
+                command_handler = getattr(self, 'do_'+cmd, None)
+                if command_handler:
+                    return command_handler(sender, body, args)
+
+            broadcast_body = '[%s] %s' % (sender['NICK'], body,)
+            return self.broadcast(broadcast_body, exclude=(sender,))
         except:
-            exc_info = sys.exc_info()
-            traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
-
-def start_server(chatrooms={}, use_default_logging=True):
-    if use_default_logging:
-        configure_logging()
-
-    logger.info('Hermes version %s' % (hermes.VERSION_STRING,))
-
-    bots = []
-    for name, params in chatrooms.items():
-
-        bot_class_str = params.get('CLASS', 'hermes.HermesChatroom')
-        bot_class_path = bot_class_str.split('.')
-        module, classname = '.'.join(bot_class_path[:-1]), bot_class_path[-1]
-        #bot_class = __import__(bot_class_str)
-        _ = __import__(module, globals(), locals(), [classname])
-        bot_class = getattr(_, classname)
-        bot = bot_class(name, params)
-        bots.append(bot)
-
-    while True:
-        try:
-            logger.info("Connecting to servers...")
-            sockets = _get_sockets(bots)
-            if len(sockets.keys()) == 0:
-                logger.info('No chatrooms defined. Exiting.')
-                return
-
-            _listen(sockets)
-        except socket.error, ex:
-            if ex.errno == 9:
-                logger.exception('broken socket detected')
-            else:
-                logger.exception('Unknown socket error %d' % (ex.errno,))
-        except Exception:
-            logger.exception('Unexpected exception')
-            time.sleep(1)
-
-def _get_sockets(bots):
-    sockets = {}
-    #sockets[sys.stdin] = 'stdio'
-    for bot in bots:
-        bot.connect()
-        sockets[bot.client.Connection._sock] = bot
-    return sockets
-
-def _listen(sockets):
-    while True:
-        (i , o, e) = select.select(sockets.keys(),[],[],1)
-        for socket in i:
-            if isinstance(sockets[socket], HermesChatroom):
-                data_len = sockets[socket].client.Process(1)
-                if data_len is None or data_len == 0:
-                    raise Exception('Disconnected from server')
-            #elif sockets[socket] == 'stdio':
-            #    msg = sys.stdin.readline().rstrip('\r\n')
-            #    logger.info('stdin: [%s]' % (msg,))
-            else:
-                raise Exception("Unknown socket type: %s" % repr(sockets[socket]))
+            logger.exception('Error handling message [%s] from [%s]' % (body, sender['JID']))
