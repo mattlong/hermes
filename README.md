@@ -8,7 +8,7 @@ Supply your own XMPP-based accounts (Google accounts work great!) to serve as ch
 
 ## Usage
 
-The "Hello World" usage of Hermes looks like this. Put the following in `chatserver.py`, update the user info and chatroom connection info, and run it:
+The "Hello World" usage of Hermes looks like this. Put the following in `chatserver.py`, update the user and chatroom info, and run it:
 
     from hermes import run_server
     
@@ -48,7 +48,7 @@ Hermes interprets some messages as commands:
 
 ## Extensibility
 
-It's easy to extend the functionality chatroom. Extend the base chatroom class `hermes.HermesChatroom` to modify or add extra functionality. Then specify it as the `CLASS` class your chatrooms:
+It's easy to extend the functionality chatroom. Extend the base chatroom class `hermes.Chatroom` to modify or add extra functionality. Then specify it as the `CLASS` of your chatrooms:
 
 	from hermes import run_server, Chatroom
 
@@ -83,8 +83,8 @@ Elaborate, you say? Hermes has been successfully used "in production" to run sev
 
 ## License
 
-Hermes is an ISC licensed library. See LICENSE for more details.
+Hermes is an ISC licensed library. See LICENSE for more details. If you insist on compensating me, I'd let you buy me a beer. Or just donate money to a good cause...that'd probably be best.
 
 ## Can I Contribute?
 
-Yes, please do! Pull requests are great!
+Yes, please do. Pull requests are great. I'll totally add a CONTRIBUTORS.txt when Hermes gets its first contributor...
