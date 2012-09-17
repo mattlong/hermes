@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 #    if not quiet:
 #        print '%s%s%s' % (datetime.utcnow(), (indent+1)*' ', msg)
 
-def start_server(chatrooms, use_default_logging=True):
+def run_server(chatrooms, use_default_logging=True):
     """Sets up and serves specified chatrooms. Main entrypoint to Hermes.
 
     :param chatrooms: Dictionary of chatrooms to serve.
@@ -36,12 +36,17 @@ def start_server(chatrooms, use_default_logging=True):
     bots = []
     for name, params in chatrooms.items():
 
-        bot_class_str = params.get('CLASS', 'hermes.Chatroom')
-        bot_class_path = bot_class_str.split('.')
-        module, classname = '.'.join(bot_class_path[:-1]), bot_class_path[-1]
-        #bot_class = __import__(bot_class_str)
-        _ = __import__(module, globals(), locals(), [classname])
-        bot_class = getattr(_, classname)
+        bot_class = params.get('CLASS', 'hermes.Chatroom')
+        if type(bot_class) == type:
+            pass
+        else:
+            bot_class_path = bot_class.split('.')
+            if len(bot_class_path) == 1:
+                module, classname = '__main__', bot_class_path[-1]
+            else:
+                module, classname = '.'.join(bot_class_path[:-1]), bot_class_path[-1]
+            _ = __import__(module, globals(), locals(), [classname])
+            bot_class = getattr(_, classname)
         bot = bot_class(name, params)
         bots.append(bot)
 

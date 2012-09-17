@@ -10,7 +10,7 @@ Project homepage: https://github.com/mattlong/hermes
 :license: ISC, see LICENSE for more details.
 """
 
-from .server import start_server
+from .server import run_server
 from .chatroom import Chatroom
 from .version import VERSION_STRING
 
