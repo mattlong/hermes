@@ -12,12 +12,12 @@ Project homepage: https://github.com/mattlong/hermes
 
 from .server import run_server
 from .chatroom import Chatroom
-from .version import VERSION_STRING
+#from .version import VERSION_STRING
 
 __author__ = "Matt Long"
 __copyright__ = "Copyright 2012, Matt Long"
 __license__ = "ISC"
-__version__ = VERSION_STRING
+__version__ = '0.2.6'
 __maintainer__ = "Matt Long"
 __status__ = "Development"
 
