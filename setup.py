@@ -5,7 +5,7 @@ setup(
     packages=find_packages(),
     version='0.2.6',
     author="Matt Long",
-    license="BSD",
+    license="ISC",
     author_email="matt@mattlong.org",
     url="https://github.com/mattlong/hermes",
     description="Hermes is an extensible XMPP-based chatroom server written in Python.",
