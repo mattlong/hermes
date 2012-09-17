@@ -120,7 +120,7 @@ class Chatroom(object):
     def broadcast(self, body, html_body=None, exclude=()):
         """Broadcast a message to users in the chatroom"""
         logger.info('broadcast on %s: %s' % (self.name, body,))
-        for member in filter(lambda m: m['STATUS'] == 'ACTIVE' and m not in exclude, self.params['MEMBERS']):
+        for member in filter(lambda m: m.get('STATUS') == 'ACTIVE' and m not in exclude, self.params['MEMBERS']):
             logger.debug(member['JID'])
             self.send_message(body, member, html_body=html_body, quiet=True)
 
