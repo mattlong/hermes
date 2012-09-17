@@ -36,19 +36,19 @@ Available from PyPI: <http://pypi.python.org/pypi/hermes/>. pip is the recommend
 
 Hermes interprets some messages as commands:
 
-* `/mute` - Silences (and queues up) all chatroom activity until you unmute it so you can be distraction free.
+* `/mute` - Mutes the chatroom so you can be distraction free. All messages are queued up for you for whenever you unmute the chatroom.
 
-* `/unmute` - Receive aqueued messages.
+* `/unmute` - Unmutes the chatroom. Receive all messages that had been queued up for you while the chatroom was muted.
 
-* `/invite <handle>` - Invite new members to the chatroom. admins only
+* `/invite <handle>` - Invite new members to the chatroom. Available to admins only.
 
-* `/kick <handle>` - Invite new members to the chatroom. admins only.
+* `/kick <handle>` - Kick members from the chatroom. Available to admins only.
 
-* `/marco` - Not sure if you're still connected to the chatroom? Chatroom replies to you (and only you) with "polo"
+* `/marco` - Not sure if you're still connected to the chatroom? Chatroom replies to you (and only you) with "polo".
 
 ## Extensibility
 
-It's easy to extend the functionality chatroom. Extend the base chatroom class `hermes.Chatroom` to modify or add extra functionality. Then specify it as the `CLASS` of your chatrooms:
+You can extend the base chatroom class `hermes.Chatroom` to modify or add extra functionality. Then specify your creation as the `CLASS` of your chatrooms:
 
 	from hermes import run_server, Chatroom
 
@@ -69,7 +69,7 @@ It's easy to extend the functionality chatroom. Extend the base chatroom class `
         },
     }
 	
-	run_server(chatrooms, use_default_logging=True)
+	run_server(chatrooms)
 
 ## Upcoming Features
 
@@ -87,4 +87,4 @@ Hermes is an ISC licensed library. See LICENSE for more details. If you insist o
 
 ## Can I Contribute?
 
-Yes, please do. Pull requests are great. I'll totally add a CONTRIBUTORS.txt when Hermes gets its first contributor...
+Yes, please do. Pull requests are great. I'll totally add a CONTRIBUTORS.txt when Hermes gets its first contributor.
