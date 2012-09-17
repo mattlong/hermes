@@ -1,10 +1,12 @@
 # hermes
 
-Hermes is an extensible XMPP-based chatroom server written in Python. Easily setup and manage chatrooms for friends or colleagues.
+Hermes is an extensible XMPP-based chatroom server written in Python.
+Easily setup and manage chatrooms for friends or colleagues.
 
 ## How it Works
 
-Supply your own XMPP-based accounts (Google accounts work great!) to serve as chatroom hosts, add a bit of configuration, and that's it. All chatroom members are invited to chat with the host account which will in turn broadcast the message to all other members of the room.
+Supply your own XMPP-based accounts (Google accounts work great!) to serve as chatroom hosts, add a bit of configuration, and that's it.
+All chatroom members are invited to chat with the chatroom host which will in turn broadcast their messages to all other members.
 
 ## Usage
 
