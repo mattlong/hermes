@@ -56,7 +56,7 @@ Adding a `command_patterns` static property to your class should be particularly
 It's a list of regular expression/method name pairs. Each incoming message is tested against the regexes until a match is found.
 On a match, the named instance method is invoked to handle the message instead of the default message-handling pipeline.
 
-Specify your creation as the `CLASS` of your chatroom:
+Specify the path to your creation as a string or the Class itself as the `CLASS` of your chatroom:
 
     from hermes import run_server, Chatroom
 
