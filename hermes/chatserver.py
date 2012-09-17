@@ -2,13 +2,20 @@ import sys, logging, json, xmpp, select, socket, re, time, traceback
 from datetime import datetime
 
 import hermes
+from hermes.log import configure_logging
 
-def debug(msg, indent=0, quiet=False):
-    if not quiet:
-        print '%s%s%s' % (datetime.utcnow(), (indent+1)*' ', msg)
+logger = logging.getLogger(__name__)
 
-class HermesBot(object):
-    command_patterns = []
+#def debug(msg, indent=0, quiet=False):
+#    if not quiet:
+#        print '%s%s%s' % (datetime.utcnow(), (indent+1)*' ', msg)
+
+class HermesChatroom(object):
+
+    #static property that can hold a list of regular expression/method name pairs. Each incoming message
+    #is tested against each regex. On a match, the associated method is invoked to handle the message
+    #instead of the standard message-handling pipeline.
+    command_patterns = ()
 
     def __init__(self, name, params):
         self.command_patterns = []
@@ -90,7 +97,8 @@ class HermesBot(object):
         if to.get('MUTED'):
             to['QUEUED_MESSAGES'].append(body)
         else:
-            debug('message on %s to %s: %s' % (self.name, to['JID'], body), quiet=quiet)
+            if not quiet:
+                logger.info('message on %s to %s: %s' % (self.name, to['JID'], body))
 
             message = xmpp.protocol.Message(to=to['JID'], body=body, typ='chat')
             if html_body:
@@ -101,10 +109,12 @@ class HermesBot(object):
             self.client.send(message)
 
     def broadcast(self, body, html_body=None, exclude=()):
-        debug('broadcast on %s: %s' % (self.name, body,))
+        logger.info('broadcast on %s: %s' % (self.name, body,))
         for member in filter(lambda m: m['STATUS'] == 'ACTIVE' and m not in exclude, self.params['MEMBERS']):
-            debug(member['JID'], indent=2)
+            logger.debug(member['JID'])
             self.send_message(body, member, html_body=html_body, quiet=True)
+
+    ### Command handlers ###
 
     def do_marco(self, sender, body, args):
         self.send_message('polo', sender)
@@ -137,15 +147,16 @@ class HermesBot(object):
         else:
             self.send_message('you were not muted', sender)
 
+    ### XMPP event handlers ###
+
     def on_disconnect(self):
-        debug('ERROR: Disconnected from server!')
-        #debug(str(self.client.reconnectAndReauth()))
+        logger.error('Disconnected from server!')
 
     def on_presence(self, session, presence):
         if presence.getType() == 'subscribe':
             from_jid = presence.getFrom()
             if self.is_member(from_jid.getStripped()):
-                debug('Acknowledging subscription request from [%s]' % (from_jid,))
+                logger.info('Acknowledging subscription request from [%s]' % (from_jid,))
                 self.client.sendPresence(jid=from_jid, typ='subscribed')
                 member = self.get_member(from_jid)
                 member['STATUS'] = 'ACTIVE'
@@ -154,7 +165,7 @@ class HermesBot(object):
                 #TODO: show that a user has requested membership?
                 pass
         else:
-            debug('Unhandled presence stanza of type [%s] from [%s]' % (presence.getType(), presence.getFrom()))
+            logger.info('Unhandled presence stanza of type [%s] from [%s]' % (presence.getType(), presence.getFrom()))
 
     def on_message(self, con, event):
         msg_type = event.getType()
@@ -165,7 +176,7 @@ class HermesBot(object):
         if msg_type == 'chat' and body is None:
             return
 
-        debug('msg_type[%s] from[%s] nick[%s] body[%s]' % (msg_type, from_jid, nick, body,))
+        logger.debug('msg_type[%s] from[%s] nick[%s] body[%s]' % (msg_type, from_jid, nick, body,))
 
         sender = filter(lambda m: m['JID'] == from_jid, self.params['MEMBERS'])
 
@@ -177,7 +188,7 @@ class HermesBot(object):
             reg, cmd = p
             m = reg.match(body)
             if m:
-                debug('pattern matched for bot command \'%s\'' % (cmd,))
+                logger.info('pattern matched for bot command \'%s\'' % (cmd,))
                 function = getattr(self, cmd, None) if cmd else None
                 if function:
                     return function(sender, body, m)
@@ -200,13 +211,16 @@ class HermesBot(object):
             exc_info = sys.exc_info()
             traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
 
-def start_server(settings):
-    debug('Hermes version %s' % (hermes.VERSION_STRING,))
+def start_server(chatrooms={}, use_default_logging=True):
+    if use_default_logging:
+        configure_logging()
+
+    logger.info('Hermes version %s' % (hermes.VERSION_STRING,))
 
     bots = []
-    for name, params in settings.CHATROOMS.items():
+    for name, params in chatrooms.items():
 
-        bot_class_str = params.get('CLASS', 'hermes.HermesBot')
+        bot_class_str = params.get('CLASS', 'hermes.HermesChatroom')
         bot_class_path = bot_class_str.split('.')
         module, classname = '.'.join(bot_class_path[:-1]), bot_class_path[-1]
         #bot_class = __import__(bot_class_str)
@@ -217,22 +231,20 @@ def start_server(settings):
 
     while True:
         try:
-            debug("INFO: connecting to servers")
+            logger.info("Connecting to servers...")
             sockets = _get_sockets(bots)
             if len(sockets.keys()) == 0:
-                debug('INFO: No chatrooms defined. Exiting.')
+                logger.info('No chatrooms defined. Exiting.')
                 return
 
             _listen(sockets)
         except socket.error, ex:
             if ex.errno == 9:
-                debug('ERROR: broken socket detected')
+                logger.exception('broken socket detected')
             else:
-                debug('ERROR: unknown socket error %d' % (ex.errno,))
+                logger.exception('Unknown socket error %d' % (ex.errno,))
         except Exception:
-            exc_info = sys.exc_info()
-            err_msg = traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
-            debug(err_msg)
+            logger.exception('Unexpected exception')
             time.sleep(1)
 
 def _get_sockets(bots):
@@ -247,12 +259,12 @@ def _listen(sockets):
     while True:
         (i , o, e) = select.select(sockets.keys(),[],[],1)
         for socket in i:
-            if isinstance(sockets[socket], HermesBot):
+            if isinstance(sockets[socket], HermesChatroom):
                 data_len = sockets[socket].client.Process(1)
                 if data_len is None or data_len == 0:
                     raise Exception('Disconnected from server')
-            elif sockets[socket] == 'stdio':
-                msg = sys.stdin.readline().rstrip('\r\n')
-                debug('stdin: %s' % (msg,))
+            #elif sockets[socket] == 'stdio':
+            #    msg = sys.stdin.readline().rstrip('\r\n')
+            #    logger.info('stdin: [%s]' % (msg,))
             else:
                 raise Exception("Unknown socket type: %s" % repr(sockets[socket]))
