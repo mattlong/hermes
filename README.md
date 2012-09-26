@@ -12,7 +12,7 @@ All chatroom members are invited to chat with the chatroom host which will in tu
 
 The "Hello World" usage of Hermes looks like this. Put the following in `chatserver.py`, update the user and chatroom info, and run it:
 
-    from hermes import run_server
+    from hermes.api import run_server
     
     brain = { 'JID': 'brain@wb.com', 'NICK': 'brain', 'ADMIN': True }
     pinky = { 'JID': 'pinky.suavo@wb.com', 'NICK': 'pinky' }
@@ -58,7 +58,7 @@ On a match, the named instance method is invoked to handle the message instead o
 
 Specify the path to your creation as a string or the Class itself as the `CLASS` of your chatroom:
 
-    from hermes import run_server, Chatroom
+    from hermes.api import run_server, Chatroom
 
     class BillyMaysChatroom(Chatroom):
     	command_patterns = ((r'.*', 'shout'),)

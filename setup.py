@@ -1,9 +1,11 @@
 from setuptools import setup, find_packages
 
+from hermes import VERSION_STRING
+
 setup(
     name="hermes",
     packages=find_packages(),
-    version='0.2.6',
+    version=VERSION_STRING,
     author="Matt Long",
     license="ISC",
     author_email="matt@mattlong.org",
