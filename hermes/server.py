@@ -11,8 +11,6 @@ import socket
 import time
 import logging
 
-from datetime import datetime
-
 from .log import configure_logging
 from .chatroom import Chatroom
 

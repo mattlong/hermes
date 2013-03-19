@@ -5,7 +5,6 @@ hermes.chatroom
 This module contains the base chatroom functionality for Hermes.
 """
 
-import sys
 import re
 import xmpp
 import logging
@@ -170,8 +169,16 @@ class Chatroom(object):
 
     def on_presence(self, session, presence):
         """Handles presence stanzas"""
-        if presence.getType() == 'subscribe':
-            from_jid = presence.getFrom()
+        from_jid = presence.getFrom()
+        if presence.getType() == 'subscribed':
+            if self.is_member(from_jid.getStripped()):
+                logger.info('[%s] accepted their invitation' % (from_jid,))
+                member = self.get_member(from_jid)
+                member['STATUS'] = 'ACTIVE'
+            else:
+                #TODO: user accepted, but is no longer be on the roster, unsubscribe?
+                pass
+        elif presence.getType() == 'subscribe':
             if self.is_member(from_jid.getStripped()):
                 logger.info('Acknowledging subscription request from [%s]' % (from_jid,))
                 self.client.sendPresence(jid=from_jid, typ='subscribed')
