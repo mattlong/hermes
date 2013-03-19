@@ -10,7 +10,7 @@ Project homepage: https://github.com/mattlong/hermes
 :license: ISC, see LICENSE for more details.
 """
 
-VERSION = (0, 2, 7)
+VERSION = (0, 3, 0)
 VERSION_STRING = '.'.join(map(str,VERSION))
 
 __author__ = "Matt Long"
