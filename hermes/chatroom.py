@@ -188,6 +188,9 @@ class Chatroom(object):
             else:
                 #TODO: show that a user has requested membership?
                 pass
+        elif presence.getType() == None:
+            # ignoring these for now
+            pass
         else:
             logger.info('Unhandled presence stanza of type [%s] from [%s]' % (presence.getType(), presence.getFrom()))
 
