@@ -30,6 +30,10 @@ class Chatroom(object):
 
     def connect(self):
         """Connect to the chatroom's server, sets up handlers, invites members as needed."""
+        for m in self.params['MEMBERS']:
+            m['ONLINE'] = 0
+            m.setdefault('STATUS', 'INVITED')
+
         self.client = xmpp.Client(self.jid.getDomain(), debug=[])
         conn = self.client.connect(server=self.params['SERVER'])
         if not conn:
@@ -60,19 +64,24 @@ class Chatroom(object):
 
     def is_member(self, m):
         """Check if a user is a member of the chatroom"""
-        if isinstance(m, basestring):
+        if not m:
+            return False
+        elif isinstance(m, basestring):
             jid = m
         else:
             jid = m['JID']
 
-        return len(filter(lambda m: m['JID'] == jid and m['STATUS'] in ('ACTIVE', 'INVITED'), self.params['MEMBERS'])) > 0
+        is_member = len(filter(lambda m: m['JID'] == jid and m.get('STATUS') in ('ACTIVE', 'INVITED'), self.params['MEMBERS'])) > 0
+
+        return is_member
 
     def invite_user(self, new_member, inviter=None, roster=None):
         """Invites a new member to the chatroom"""
         roster = roster or self.client.getRoster()
         jid = new_member['JID']
 
-        if jid in roster.keys() and roster.getSubscription(jid) == 'both':
+        logger.info('roster %s %s' % (jid, roster.getSubscription(jid)))
+        if jid in roster.keys() and roster.getSubscription(jid) in ['both', 'to']:
             new_member['STATUS'] = 'ACTIVE'
             if inviter:
                 self.send_message('%s is already a member' % (jid,), inviter)
@@ -170,29 +179,38 @@ class Chatroom(object):
     def on_presence(self, session, presence):
         """Handles presence stanzas"""
         from_jid = presence.getFrom()
+        is_member = self.is_member(from_jid.getStripped())
+        if is_member:
+            member = self.get_member(from_jid.getStripped())
+        else:
+            member = None
+
+        logger.info('presence: from=%s is_member=%s type=%s' % (from_jid, is_member, presence.getType()))
+
         if presence.getType() == 'subscribed':
-            if self.is_member(from_jid.getStripped()):
+            if is_member:
                 logger.info('[%s] accepted their invitation' % (from_jid,))
-                member = self.get_member(from_jid)
                 member['STATUS'] = 'ACTIVE'
             else:
                 #TODO: user accepted, but is no longer be on the roster, unsubscribe?
                 pass
         elif presence.getType() == 'subscribe':
-            if self.is_member(from_jid.getStripped()):
+            if is_member:
                 logger.info('Acknowledging subscription request from [%s]' % (from_jid,))
                 self.client.sendPresence(jid=from_jid, typ='subscribed')
-                member = self.get_member(from_jid)
                 member['STATUS'] = 'ACTIVE'
                 self.broadcast('%s has accepted their invitation!' % (from_jid,))
             else:
                 #TODO: show that a user has requested membership?
                 pass
         elif presence.getType() == None:
-            # ignoring these for now
-            pass
+            if is_member:
+                member['ONLINE'] += 1
+        elif presence.getType() == 'unavailable':
+            if is_member:
+                member['ONLINE'] -= 1
         else:
-            logger.info('Unhandled presence stanza of type [%s] from [%s]' % (presence.getType(), presence.getFrom()))
+            logger.info('Unhandled presence stanza of type [%s] from [%s]' % (presence.getType(), from_jid))
 
     def on_message(self, con, event):
         """Handles messge stanzas"""
